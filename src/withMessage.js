@@ -9,6 +9,12 @@ class JestAssertionError extends Error {
   }
 }
 
+global.jestExpectMessage = {
+  label: 'Custom message',
+  labelSuffix: ':\n  ',
+  position: 'before',
+};
+
 const wrapMatcher = (matcher, customMessage) => {
   const newMatcher = (...args) => {
     try {
@@ -23,11 +29,24 @@ const wrapMatcher = (matcher, customMessage) => {
         throw new JestAssertionError(matcherResult, newMatcher);
       }
 
-      const message = () => 'Custom message:\n  ' + customMessage + '\n\n' + matcherResult.message();
+      let prefix = '';
+      
+      if (global.jestExpectMessage.label){
+        prefix = global.jestExpectMessage.label + global.jestExpectMessage.labelSuffix;
+      }
+
+      let message;
+
+      if (global.jestExpectMessage.position === 'before') {
+        message = () => `${prefix}${customMessage}\n\n${matcherResult.message()}`;
+      } else {
+        message = () => `${matcherResult.message()}\n\n${prefix}${customMessage}`;
+      }
 
       throw new JestAssertionError({ ...matcherResult, message }, newMatcher);
     }
   };
+
   return newMatcher;
 };
 
